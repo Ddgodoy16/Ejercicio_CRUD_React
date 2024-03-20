@@ -24,9 +24,10 @@ export const Usuarios = () => {
             const response = await axios.get(url);
             setUsuarios(response.data);
         } catch (error) {
+            console.error('Error al obtener usuarios:', error);
             alert('Error al obtener usuarios');
         }
-    }
+    };
 
     useEffect(() => {
         getUsuarios();
@@ -47,78 +48,66 @@ export const Usuarios = () => {
             setTitleModal('Editar Usuario');
             setOperation(2);
         }
+    };
+
+    const enviarSolicitud = async (url, metodo, parametros) => {
+        let obj = {
+            method: metodo,
+            url: url,
+            data: parametros,
+            headers: {
+                "Content-Type":"application/json",
+                "Accept":"application/json"
+            }
+        };
+        await axios(obj).then( () => {
+            let mensaje;
+
+            if (metodo === 'POST') {
+                mensaje = 'Se guardó el usuario';
+            } else if (metodo === 'PUT') {
+                mensaje = 'Se editó el usuario';
+            } else if (metodo === 'DELETE') {
+                mensaje = 'Se eliminó el usuario';
+            }
+            alertaSuccess(mensaje);
+            document.getElementById('btnCerrarModal').click();
+            getUsuarios();
+        }).catch((error) => {
+            alertaError(error.response.data.message);
+            console.log(error);
+        });
     }
 
-    
-            const enviarSolicitud = async (url, metodo, parametros) => {
-                let obj = {
-                    method: metodo,
-                    url: url,
-                    data: parametros,
-                    headers: {
-                        "Content-Type":"application/json",
-                        "Accept":"application/json"
-                    }
-                };
-                await axios(obj).then( () => {
-                    let mensaje;
-        
-                    if (metodo === 'POST') {
-                        mensaje = 'Se guardó el usuario';
-                    } else if (metodo === 'PUT') {
-                        mensaje = 'Se editó el usuario';
-                    } else if (metodo === 'DELETE') {
-                        mensaje = 'Se eliminó el usuario';
-                    }
-                    alertaSuccess(mensaje);
-                    document.getElementById('btnCerrarModal').click();
-                    getUsuarios();
-                }).catch((error) => {
-                    alertaError(error.message);
-                    console.log(error);
-                });
-            }
-        
-        
 
     const validar = () => {
-        let payload;
-        let metodo;
-        let urlAxios;
-
-        if (name === '') {
-            alertaWarning('Por favor, escriba el nombre del usuario');
-        } else if (role === '') {
-            alertaWarning('Por favor, escriba el rol del usuario');
-        } else if (email === '') {
-            alertaWarning('Por favor, escriba el correo electrónico del usuario');
-        } else if (avatar === '') {
-            alertaWarning('Por favor, agregue la foto del usuario');
-        } else if (password === '') {
-            alertaWarning('Por favor, escriba una contraseña');
-        } else {
-            payload = {
-                name: name,
-                role: role,
-                email: email,
-                avatar: avatar,
-                password: password
-            };
-
-            if (operation === 1) {
-                metodo = 'POST';
-                urlAxios = 'https://api.escuelajs.co/api/v1/users/';
-            } else {
-                metodo = 'PUT';
-                urlAxios = `https://api.escuelajs.co/api/v1/users/${id}`;
-            }
-
-            enviarSolicitud(urlAxios, metodo, payload);
+        if (!name || !role || !email || !avatar || !password) {
+            alertaWarning('Por favor, complete todos los campos');
+            return;
         }
-    }
+
+        let payload = {
+            name: name,
+            role: role,
+            email: email,
+            avatar: avatar,
+            password: password
+        };
+
+        let metodo, urlAxios;
+        if (operation === 1) {
+            metodo = 'POST';
+            urlAxios = url;
+        } else {
+            metodo = 'PUT';
+            urlAxios = `${url}/${id}`;
+        }
+
+        enviarSolicitud(urlAxios, metodo, payload);
+    };
 
     const deleteUsuario = (id) => {
-        let urlDelete = `https://api.escuelajs.co/api/v1/users/${id}`;
+        const urlDelete = `${url}/${id}`;
 
         const MySwal = withReactContent(Swal);
         MySwal.fire({
@@ -134,10 +123,10 @@ export const Usuarios = () => {
                 enviarSolicitud(urlDelete, 'DELETE', {});
             }
         }).catch((error) => {
+            console.error('Error al eliminar usuario:', error);
             alert('Error al eliminar usuario');
-            console.log(error);
         });
-    }
+    };
     return (
         <div className='App'>
             <div className='container-fluid mt-5'>
@@ -232,7 +221,7 @@ export const Usuarios = () => {
                             <button onClick={() => validar()} className='btn btn-success'>
                                 <i className='fa-solid fa-save'></i> Guardar
                             </button>
-                            <button type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
+                            <button id='btnCerrarModal' type='button' className='btn btn-secondary' data-bs-dismiss='modal'>
                                 Cerrar
                             </button>
                         </div>
